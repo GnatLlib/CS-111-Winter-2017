@@ -1,0 +1,16 @@
+This package contains:
+
+A single C source module that compiles cleanly
+A makefile to build test, and clean the program and build the tarball
+A backtrace.png screenshot of a stack backtrace
+A nullpointer.png screenshot of examination of nullpointer
+A README describing the inluded files
+
+TESTING PROTOCOL:
+The quick smoke-test run by make check is a very simple test that checks
+that the program can correctly open and write files, and that the segmentation
+and catch returns the correct exit code. Since this is only a very basic 
+smoketest, other tests are not included
+
+
+
