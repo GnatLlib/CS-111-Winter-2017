@@ -1,0 +1,9 @@
+Part B of lab 1 creating a simple shell script.
+
+Current package includes 
+-base code for simpsh program
+-test.sh script for basic test of program
+-Makefile to build, test, and distribute package
+-README FILE
+
+Current version of simpsh implements all the options except --profile
