@@ -1,0 +1,353 @@
+Total: 564 samples
+     442  78.4%  78.4%      442  78.4% set_lock
+      64  11.3%  89.7%       64  11.3% SortedList_insert
+      58  10.3% 100.0%       58  10.3% SortedList_lookup
+       0   0.0% 100.0%      564 100.0% __clone
+       0   0.0% 100.0%      564 100.0% doJob
+       0   0.0% 100.0%      564 100.0% start_thread
+ROUTINE ====================== doJob in /u/cs/ugrad/tang/cs111/2b/lab2_list.c
+     0    564 Total samples (flat / cumulative)
+     .      .   54: 	long ttime = temp.tv_sec * 1000000000 + temp.tv_nsec;
+     .      .   55: 	return ttime;
+     .      .   56: }
+     .      .   57: //job for each thread to run
+     .      .   58: void *doJob(void *it)
+---
+     .      .   59: {
+     .      .   60: 	
+     .      .   61: 	thread_data * t = it;
+     .      .   62: 	SortedListElement_t * start = t->k;
+     .      .   63: 	SortedListElement_t * temp;
+     .      .   64: 	int key;
+     .      .   65: 	//if no sync option is selected
+     .      .   66: 	if(syncopt == 0){
+     .      .   67: 	for(int i = 0; i<iters; i++){
+     .      .   68: 		
+     .      .   69: 		key = (int)(*((start+i)->key));
+     .      .   70: 		
+     .      .   71: 		SortedList_insert(&globalLists[key%numLists], start+i);
+     .      .   72: 	
+     .      .   73: 	}
+     .      .   74: 	
+     .      .   75: 	for(int i = 0 ; i<numLists; i++){
+     .      .   76: 	if(SortedList_length(&globalLists[i]) == -1){
+     .      .   77: 		fprintf(stderr, "Corrupted list discovered when calculating length\n");
+     .      .   78: 		
+     .      .   79: 		exit(1);
+     .      .   80: 		
+     .      .   81: 		}
+     .      .   82: 	}
+     .      .   83: 	for(int i = 0; i<iters; i++){
+     .      .   84: 		key = (int)(*((start+i)->key));
+     .      .   85: 		temp = SortedList_lookup(&globalLists[key%numLists], (start+i)->key);
+     .      .   86: 		if(temp == NULL){
+     .      .   87: 			fprintf(stderr, "Inserted element not found!\n");
+     .      .   88: 			exit(1);
+     .      .   89: 		}
+     .      .   90: 		
+     .      .   91: 		
+     .      .   92: 		if(SortedList_delete(temp) == 1){
+     .      .   93: 			fprintf(stderr, "Corruped list discovered when deleting!\n");
+     .      .   94: 			exit(1);
+     .      .   95: 		}
+     .      .   96: 		
+     .      .   97: 	}
+     .      .   98: 	}
+     .      .   99: 	//pthread_mutex implementation
+     .      .  100: 	else if(syncopt == 1){
+     .      .  101: 	struct timespec stime, etime;
+     .      .  102: 		
+     .      .  103: 
+     .      .  104: 		
+     .      .  105: 		
+     .      .  106: 	for(int i = 0; i<iters; i++){
+     .      .  107: 		key = (int)(*((start+i)->key));
+     .      .  108: 		
+     .      .  109: 			clock_gettime(CLOCK_MONOTONIC, &stime);
+     .      .  110: 			pthread_mutex_lock(&ms[key%numLists]);
+     .      .  111: 			clock_gettime(CLOCK_MONOTONIC, &etime);
+     .      .  112: 			long ttime = elapsedTime(stime, etime);	
+     .      .  113: 			t->mutex_time += ttime;
+     .      .  114: 
+     .      .  115: 		
+     .      .  116: 		SortedList_insert(&globalLists[key%numLists], start+i);
+     .      .  117: 			pthread_mutex_unlock(&ms[key%numLists]);
+     .      .  118: 		
+     .      .  119: 			
+     .      .  120: 	}
+     .      .  121: 	for(int i = 0 ; i<numLists; i++){
+     .      .  122: 	clock_gettime(CLOCK_MONOTONIC, &stime);
+     .      .  123: 			pthread_mutex_lock(&ms[i]);
+     .      .  124: 			clock_gettime(CLOCK_MONOTONIC, &etime);
+     .      .  125: 			long ttime = elapsedTime(stime, etime);	
+     .      .  126: 			t->mutex_time += ttime;
+     .      .  127: 	
+     .      .  128: 	if(SortedList_length(&globalLists[i]) == -1){
+     .      .  129: 		fprintf(stderr, "Corrupted list discovered when calculating length\n");
+     .      .  130: 		
+     .      .  131: 		exit(1);
+     .      .  132: 		
+     .      .  133: 		}
+     .      .  134: 	
+     .      .  135: 	
+     .      .  136: 	pthread_mutex_unlock(&ms[i]);
+     .      .  137: 	}
+     .      .  138: 	
+     .      .  139: 	for(int i = 0; i<iters; i++){
+     .      .  140: 		key = (int)(*((start+i)->key));
+     .      .  141: 		clock_gettime(CLOCK_MONOTONIC, &stime);
+     .      .  142: 			pthread_mutex_lock(&ms[key%numLists]);
+     .      .  143: 			clock_gettime(CLOCK_MONOTONIC, &etime);
+     .      .  144: 			long ttime = elapsedTime(stime, etime);	
+     .      .  145: 			t->mutex_time += ttime;
+     .      .  146: 		
+     .      .  147: 		temp = SortedList_lookup(&globalLists[key%numLists], (start+i)->key);
+     .      .  148: 		
+     .      .  149: 		
+     .      .  150: 		if(temp == NULL){
+     .      .  151: 			fprintf(stderr, "Inserted element not found!\n");
+     .      .  152: 			exit(1);
+     .      .  153: 		}
+     .      .  154: 		
+     .      .  155: 		
+     .      .  156: 		
+     .      .  157: 		if(SortedList_delete(temp) == 1){
+     .      .  158: 			fprintf(stderr, "Corrupted list discovered when deleting!\n");
+     .      .  159: 			exit(1);
+     .      .  160: 		}
+     .      .  161: 		pthread_mutex_unlock(&ms[key%numLists]);
+     .      .  162: 	
+     .      .  163: 	}
+     .      .  164: 	
+     .      .  165: 		
+     .      .  166: 	}
+     .      .  167: 	
+     .      .  168: 	//spinlock implementation
+     .      .  169: 	else if(syncopt == 2){
+     .      .  170: 		
+     .      .  171: 		
+     .      .  172: 		for(int i = 0; i<iters; i++){
+     .      .  173: 			key = (int)(*((start+i)->key));
+     .    297  174: 			set_lock(key%numLists);
+     .      .  175: 			
+     .      .  176: 		
+     .     64  177: 			SortedList_insert(&globalLists[key%numLists], start+i);
+     .      .  178: 			reset_lock(key%numLists);
+     .      .  179: 			
+     .      .  180: 	}
+     .      .  181: 	
+     .      .  182: 	for(int i = 0 ; i<numLists; i++){
+     .      .  183: 	set_lock(i);
+     .      .  184: 	if(SortedList_length(&globalLists[i]) == -1){
+     .      .  185: 		fprintf(stderr, "Corrupted list discovered when calculating length\n");
+     .      .  186: 		
+     .      .  187: 		exit(1);
+     .      .  188: 		
+     .      .  189: 		}
+     .      .  190: 	reset_lock(i);
+     .      .  191: 	}
+     .      .  192: 	
+     .      .  193: 	for(int i = 0; i<iters; i++){
+     .      .  194: 		key = (int)(*((start+i)->key));
+     .    145  195: 		set_lock(key%numLists);
+     .      .  196: 		
+     .     58  197: 		temp = SortedList_lookup(&globalLists[key%numLists], (start+i)->key);
+     .      .  198: 		
+     .      .  199: 		
+     .      .  200: 		if(temp == NULL){
+     .      .  201: 			fprintf(stderr, "Inserted element not found!\n");
+     .      .  202: 			exit(1);
+     .      .  203: 		}
+     .      .  204: 		
+     .      .  205: 		
+     .      .  206: 		if(SortedList_delete(temp) == 1){
+     .      .  207: 			fprintf(stderr, "Corrupted list discovered when deleting!\n");
+     .      .  208: 			exit(1);
+     .      .  209: 		}
+     .      .  210: 		
+     .      .  211: 		reset_lock(key%numLists);
+     .      .  212: 	}
+     .      .  213: 		
+     .      .  214: 	}
+     .      .  215: 	
+     .      .  216: 	
+     .      .  217: 	pthread_exit(NULL);
+---
+     .      .  218: }
+     .      .  219: int main(int argc, char ** argv)
+     .      .  220: {
+     .      .  221: 	srand(time(0));
+     .      .  222: 	iters = 1;
+ROUTINE ====================== doJob in /u/cs/ugrad/tang/cs111/2b/lab2_list.c
+     0    564 Total samples (flat / cumulative)
+     .      .   54: 	long ttime = temp.tv_sec * 1000000000 + temp.tv_nsec;
+     .      .   55: 	return ttime;
+     .      .   56: }
+     .      .   57: //job for each thread to run
+     .      .   58: void *doJob(void *it)
+---
+     .      .   59: {
+     .      .   60: 	
+     .      .   61: 	thread_data * t = it;
+     .      .   62: 	SortedListElement_t * start = t->k;
+     .      .   63: 	SortedListElement_t * temp;
+     .      .   64: 	int key;
+     .      .   65: 	//if no sync option is selected
+     .      .   66: 	if(syncopt == 0){
+     .      .   67: 	for(int i = 0; i<iters; i++){
+     .      .   68: 		
+     .      .   69: 		key = (int)(*((start+i)->key));
+     .      .   70: 		
+     .      .   71: 		SortedList_insert(&globalLists[key%numLists], start+i);
+     .      .   72: 	
+     .      .   73: 	}
+     .      .   74: 	
+     .      .   75: 	for(int i = 0 ; i<numLists; i++){
+     .      .   76: 	if(SortedList_length(&globalLists[i]) == -1){
+     .      .   77: 		fprintf(stderr, "Corrupted list discovered when calculating length\n");
+     .      .   78: 		
+     .      .   79: 		exit(1);
+     .      .   80: 		
+     .      .   81: 		}
+     .      .   82: 	}
+     .      .   83: 	for(int i = 0; i<iters; i++){
+     .      .   84: 		key = (int)(*((start+i)->key));
+     .      .   85: 		temp = SortedList_lookup(&globalLists[key%numLists], (start+i)->key);
+     .      .   86: 		if(temp == NULL){
+     .      .   87: 			fprintf(stderr, "Inserted element not found!\n");
+     .      .   88: 			exit(1);
+     .      .   89: 		}
+     .      .   90: 		
+     .      .   91: 		
+     .      .   92: 		if(SortedList_delete(temp) == 1){
+     .      .   93: 			fprintf(stderr, "Corruped list discovered when deleting!\n");
+     .      .   94: 			exit(1);
+     .      .   95: 		}
+     .      .   96: 		
+     .      .   97: 	}
+     .      .   98: 	}
+     .      .   99: 	//pthread_mutex implementation
+     .      .  100: 	else if(syncopt == 1){
+     .      .  101: 	struct timespec stime, etime;
+     .      .  102: 		
+     .      .  103: 
+     .      .  104: 		
+     .      .  105: 		
+     .      .  106: 	for(int i = 0; i<iters; i++){
+     .      .  107: 		key = (int)(*((start+i)->key));
+     .      .  108: 		
+     .      .  109: 			clock_gettime(CLOCK_MONOTONIC, &stime);
+     .      .  110: 			pthread_mutex_lock(&ms[key%numLists]);
+     .      .  111: 			clock_gettime(CLOCK_MONOTONIC, &etime);
+     .      .  112: 			long ttime = elapsedTime(stime, etime);	
+     .      .  113: 			t->mutex_time += ttime;
+     .      .  114: 
+     .      .  115: 		
+     .      .  116: 		SortedList_insert(&globalLists[key%numLists], start+i);
+     .      .  117: 			pthread_mutex_unlock(&ms[key%numLists]);
+     .      .  118: 		
+     .      .  119: 			
+     .      .  120: 	}
+     .      .  121: 	for(int i = 0 ; i<numLists; i++){
+     .      .  122: 	clock_gettime(CLOCK_MONOTONIC, &stime);
+     .      .  123: 			pthread_mutex_lock(&ms[i]);
+     .      .  124: 			clock_gettime(CLOCK_MONOTONIC, &etime);
+     .      .  125: 			long ttime = elapsedTime(stime, etime);	
+     .      .  126: 			t->mutex_time += ttime;
+     .      .  127: 	
+     .      .  128: 	if(SortedList_length(&globalLists[i]) == -1){
+     .      .  129: 		fprintf(stderr, "Corrupted list discovered when calculating length\n");
+     .      .  130: 		
+     .      .  131: 		exit(1);
+     .      .  132: 		
+     .      .  133: 		}
+     .      .  134: 	
+     .      .  135: 	
+     .      .  136: 	pthread_mutex_unlock(&ms[i]);
+     .      .  137: 	}
+     .      .  138: 	
+     .      .  139: 	for(int i = 0; i<iters; i++){
+     .      .  140: 		key = (int)(*((start+i)->key));
+     .      .  141: 		clock_gettime(CLOCK_MONOTONIC, &stime);
+     .      .  142: 			pthread_mutex_lock(&ms[key%numLists]);
+     .      .  143: 			clock_gettime(CLOCK_MONOTONIC, &etime);
+     .      .  144: 			long ttime = elapsedTime(stime, etime);	
+     .      .  145: 			t->mutex_time += ttime;
+     .      .  146: 		
+     .      .  147: 		temp = SortedList_lookup(&globalLists[key%numLists], (start+i)->key);
+     .      .  148: 		
+     .      .  149: 		
+     .      .  150: 		if(temp == NULL){
+     .      .  151: 			fprintf(stderr, "Inserted element not found!\n");
+     .      .  152: 			exit(1);
+     .      .  153: 		}
+     .      .  154: 		
+     .      .  155: 		
+     .      .  156: 		
+     .      .  157: 		if(SortedList_delete(temp) == 1){
+     .      .  158: 			fprintf(stderr, "Corrupted list discovered when deleting!\n");
+     .      .  159: 			exit(1);
+     .      .  160: 		}
+     .      .  161: 		pthread_mutex_unlock(&ms[key%numLists]);
+     .      .  162: 	
+     .      .  163: 	}
+     .      .  164: 	
+     .      .  165: 		
+     .      .  166: 	}
+     .      .  167: 	
+     .      .  168: 	//spinlock implementation
+     .      .  169: 	else if(syncopt == 2){
+     .      .  170: 		
+     .      .  171: 		
+     .      .  172: 		for(int i = 0; i<iters; i++){
+     .      .  173: 			key = (int)(*((start+i)->key));
+     .    297  174: 			set_lock(key%numLists);
+     .      .  175: 			
+     .      .  176: 		
+     .     64  177: 			SortedList_insert(&globalLists[key%numLists], start+i);
+     .      .  178: 			reset_lock(key%numLists);
+     .      .  179: 			
+     .      .  180: 	}
+     .      .  181: 	
+     .      .  182: 	for(int i = 0 ; i<numLists; i++){
+     .      .  183: 	set_lock(i);
+     .      .  184: 	if(SortedList_length(&globalLists[i]) == -1){
+     .      .  185: 		fprintf(stderr, "Corrupted list discovered when calculating length\n");
+     .      .  186: 		
+     .      .  187: 		exit(1);
+     .      .  188: 		
+     .      .  189: 		}
+     .      .  190: 	reset_lock(i);
+     .      .  191: 	}
+     .      .  192: 	
+     .      .  193: 	for(int i = 0; i<iters; i++){
+     .      .  194: 		key = (int)(*((start+i)->key));
+     .    145  195: 		set_lock(key%numLists);
+     .      .  196: 		
+     .     58  197: 		temp = SortedList_lookup(&globalLists[key%numLists], (start+i)->key);
+     .      .  198: 		
+     .      .  199: 		
+     .      .  200: 		if(temp == NULL){
+     .      .  201: 			fprintf(stderr, "Inserted element not found!\n");
+     .      .  202: 			exit(1);
+     .      .  203: 		}
+     .      .  204: 		
+     .      .  205: 		
+     .      .  206: 		if(SortedList_delete(temp) == 1){
+     .      .  207: 			fprintf(stderr, "Corrupted list discovered when deleting!\n");
+     .      .  208: 			exit(1);
+     .      .  209: 		}
+     .      .  210: 		
+     .      .  211: 		reset_lock(key%numLists);
+     .      .  212: 	}
+     .      .  213: 		
+     .      .  214: 	}
+     .      .  215: 	
+     .      .  216: 	
+     .      .  217: 	pthread_exit(NULL);
+---
+     .      .  218: }
+     .      .  219: int main(int argc, char ** argv)
+     .      .  220: {
+     .      .  221: 	srand(time(0));
+     .      .  222: 	iters = 1;
